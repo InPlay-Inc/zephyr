@@ -1,0 +1,26 @@
+# SPDX-License-Identifier: Apache-2.0
+#
+# Copyright (c) 2023 InPlay <https://inplay-tech.com/>
+
+if SOC_FAMILY_INPLAY
+
+source "soc/arm/inplay/*/Kconfig.defconfig.series"
+config SYS_CLOCK_HW_CYCLES_PER_SEC
+	default 32768
+config FLASH_BASE_ADDRESS
+	hex
+	default 0x0300000
+
+config XIP
+	bool
+	default y
+config FLASH_LOAD_OFFSET
+	default 0x4000
+config SRAM_BASE_ADDRESS
+	hex
+	default 0x202000
+config SRAM_SIZE
+	default 120
+config FLASH_SIZE
+	default 512	
+endif # SOC_FAMILY_INPLAY

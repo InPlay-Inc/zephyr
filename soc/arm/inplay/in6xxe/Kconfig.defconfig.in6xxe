@@ -1,0 +1,14 @@
+# Nordic Semiconductor nRF52805 MCU
+
+# Copyright (c) 2020 Nordic Semiconductor ASA
+# SPDX-License-Identifier: Apache-2.0
+
+if SOC_IN6XXE
+
+config SOC
+	default "IN6XXE"
+
+config NUM_IRQS
+	default 72
+
+endif # SOC_IN6XXE

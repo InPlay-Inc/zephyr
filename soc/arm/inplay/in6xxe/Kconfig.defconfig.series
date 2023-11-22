@@ -1,0 +1,13 @@
+# Nordic Semiconductor nRF52 MCU line
+
+# Copyright (c) 2016-2018 Nordic Semiconductor ASA
+# SPDX-License-Identifier: Apache-2.0
+
+if SOC_SERIES_IN6XXE
+
+source "soc/arm/inplay/in6xxe/Kconfig.defconfig.in6xxe*"
+
+config SOC_SERIES
+	default "in6xxe"
+
+endif # SOC_SERIES_IN6XXE

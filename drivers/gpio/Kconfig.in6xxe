@@ -1,0 +1,9 @@
+# Copyright (c) 2021 Teslabs Engineering S.L.
+# SPDX-License-Identifier: Apache-2.0
+
+config GPIO_IN6XXE
+	bool "IN6XXE GPIO driver"
+	default y
+	depends on DT_HAS_INPLAY_IN6XXE_GPIO_ENABLED
+	help
+	  Enable the IN6XXE GPIO driver.

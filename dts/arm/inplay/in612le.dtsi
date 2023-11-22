@@ -1,0 +1,76 @@
+/* SPDX-License-Identifier: Apache-2.0 */
+
+#include <arm/armv7-m.dtsi>
+#include <zephyr/dt-bindings/adc/adc.h>
+#include <zephyr/dt-bindings/adc/nrf-adc.h>
+#include <zephyr/dt-bindings/gpio/gpio.h>
+#include <zephyr/dt-bindings/i2c/i2c.h>
+//#include <zephyr/dt-bindings/pinctrl/nrf-pinctrl.h>
+#include <zephyr/dt-bindings/pwm/pwm.h>
+
+/ {
+
+	cpus {
+		#address-cells = <1>;
+		#size-cells = <0>;
+
+		cpu@0 {
+			device_type = "cpu";
+			compatible = "arm,cortex-m4f";
+			reg = <0>;
+			#address-cells = <1>;
+			#size-cells = <1>;
+
+			itm: itm@e0000000 {
+				compatible = "arm,armv7m-itm";
+				reg = <0xe0000000 0x1000>;
+				swo-ref-frequency = <32000000>;
+			};
+		};
+	};
+
+	soc {
+
+		sram0: memory@200000 {
+			compatible = "mmio-sram";
+		};
+		pinctrl: pin-controller@44126000 {
+			compatible = "inplay,in6xxe-pinctrl";
+			reg = <0x44126000 0x1c00>;
+			#address-cells = <1>;
+			#size-cells = <1>;
+			status = "okay";
+			label = "PINCTRL";
+
+			gpio0: gpio@44126000 {
+				compatible = "inplay,in6xxe-gpio";
+				gpio-controller;
+				reg = <0x44126000 0x1000>;
+				#gpio-cells = <2>;
+				status = "disabled";
+				port = <0>;
+			};
+	
+		};	
+		uart0: usart@44100000{
+			compatible = "inplay,in6xxe-uart";
+			reg = <0x44100000 0x1000>;
+			interrupts = <37 0>;
+			status = "disabled";
+		};
+
+		uart1: usart@44101000{
+			compatible = "inplay,in6xxe-uart";
+			reg = <0x44101000 0x1000>;
+			interrupts = <38 0>;
+			status = "disabled";
+		};
+
+	};
+};
+
+
+
+&nvic {
+	arm,num-irq-priority-bits = <3>;
+};

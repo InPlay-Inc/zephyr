@@ -1,0 +1,35 @@
+# Copyright (c) 2021 Teslabs Engineering S.L.
+# SPDX-License-Identifier: Apache-2.0
+
+description: IN6XXE GPIO node
+
+compatible: "inplay,in6xxe-gpio"
+
+include: [gpio-controller.yaml, base.yaml]
+
+properties:
+  reg:
+    required: true
+
+  #clocks:
+  #  required: true
+
+  #resets:
+  #  required: true
+
+  "#gpio-cells":
+    const: 2
+  port:
+    type: int
+    required: true
+    description: |
+      The GPIO port number. GPIO port P0 has:
+
+        port = <0>;
+
+      And P1 has:
+
+        port = <1>;
+gpio-cells:
+  - pin
+  - flags

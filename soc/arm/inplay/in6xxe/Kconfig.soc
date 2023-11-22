@@ -1,0 +1,19 @@
+# Nordic Semiconductor nRF52 MCU line
+
+# Copyright (c) 2016-2019 Nordic Semiconductor ASA
+# SPDX-License-Identifier: Apache-2.0
+
+if SOC_SERIES_IN6XXE
+
+choice
+	prompt "InPlay 6XXE Selection"
+	depends on SOC_SERIES_IN6XXE
+
+config SOC_IN6XXE
+	bool "IN6XXE"
+
+
+endchoice
+
+
+endif # SOC_SERIES_IN6XXE

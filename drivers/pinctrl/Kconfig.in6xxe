@@ -1,0 +1,12 @@
+# Copyright (c) 2021 Teslabs Engineering S.L.
+# SPDX-License-Identifier: Apache-2.0
+
+config PINCTRL_IN6XXE
+	bool "INPLAY pin controller driver"
+	default y
+	depends on DT_HAS_INPLAY_IN6XXE_PINCTRL_ENABLED
+	help
+	  INPLAY  pin controller driver. This driver is used by series using the
+	  pin multiplexing model.
+
+

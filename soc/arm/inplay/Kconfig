@@ -1,0 +1,16 @@
+# SPDX-License-Identifier: Apache-2.0
+#
+# Copyright (c) 2023 InPlay <https://inplay-tech.com/>
+
+config SOC_FAMILY_INPLAY
+	bool
+
+if SOC_FAMILY_INPLAY
+
+config SOC_FAMILY
+	string
+	default "inplay"
+
+source "soc/arm/inplay/*/Kconfig.soc"
+
+endif # SOC_FAMILY_INPLAY

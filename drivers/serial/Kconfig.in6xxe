@@ -1,0 +1,13 @@
+# InPlay UART configuration options
+
+# Copyright (c) 2023 InPlay Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+config UART_IN6XXE
+	bool "InPlay IN6XXE UART driver"
+	default y
+	depends on DT_HAS_INPLAY_IN6XXE_UART_ENABLED
+	select SERIAL_HAS_DRIVER
+	help
+	  This option enables the UART driver for INI6XXE.
+

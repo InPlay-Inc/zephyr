@@ -1,0 +1,13 @@
+identifier: inplaydk_612le
+name: InPlay-DK-612LE
+type: mcu
+arch: arm
+toolchain:
+  - zephyr
+  - gnuarmemb
+  - xtools
+ram: 128
+flash: 512
+supported:
+  - gpio
+vendor: inplay

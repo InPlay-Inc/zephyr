@@ -1,0 +1,21 @@
+# Copyright (c) 2021, Inplay Technologies
+# SPDX-License-Identifier: Apache-2.0
+
+description: Inplay USART
+
+compatible: "inplay,in6xxe-uart"
+
+include: [uart-controller.yaml, reset-device.yaml, pinctrl-device.yaml]
+
+properties:
+  reg:
+    required: true
+
+  interrupts:
+    required: true
+
+      #resets:
+      #required: true
+
+      #clocks:
+      #required: true

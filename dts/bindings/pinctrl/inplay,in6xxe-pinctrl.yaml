@@ -1,0 +1,31 @@
+# Copyright (c) 2021 Teslabs Engineering S.L.
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+    The INPLAY pin controller (AF model) is a singleton node responsible for
+    controlling pin function selection and pin properties. 
+
+
+
+compatible: "inplay,in6xxe-pinctrl"
+
+
+child-binding:
+  description: |
+    Each child node defines the configuration for a particular state.
+  child-binding:
+    description: |
+      The grandchild nodes group pins that share the same pin configuration.
+    properties:
+      slew-rate:
+        type: string
+        default: "max-speed-2mhz"
+        enum:
+          - "max-speed-2mhz"
+          - "max-speed-25mhz"
+          - "max-speed-50mhz"
+          - "max-speed-200mhz"
+        description: |
+          Set the maximum speed of a pin. This setting effectively limits the
+          slew rate of the output signal. Defaults to "max-speed-2mhz", the SoC
+          default.
