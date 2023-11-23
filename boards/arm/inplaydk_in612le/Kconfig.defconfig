@@ -1,6 +1,6 @@
-# nRF52 DK NRF52832 board configuration
 
-# Copyright (c) 2016 Nordic Semiconductor ASA
+
+# Copyright (c) 2023 InPlay Inc.
 # SPDX-License-Identifier: Apache-2.0
 
 if BOARD_INPLAYDK_IN612LE

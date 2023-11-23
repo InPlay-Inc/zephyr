@@ -1,6 +1,6 @@
-# Nordic Semiconductor nRF52 MCU line
 
-# Copyright (c) 2016-2019 Nordic Semiconductor ASA
+
+# Copyright (c) 2023 InPlay Inc.
 # SPDX-License-Identifier: Apache-2.0
 
 if SOC_SERIES_IN6XXE

@@ -1,4 +1,4 @@
-# Copyright (c) 2020 Lemonbeat GmbH
+# Copyright (c) 2023 InPlay Inc.
 # SPDX-License-Identifier: Apache-2.0
 
 # Suppress "simple_bus_reg" on LPC boards as all GPIO ports use the same register.

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, Inplay Technologies
+ * Copyright (c) 2023 InPlay Inc.
  * SPDX-License-Identifier: Apache-2.0
  */
 

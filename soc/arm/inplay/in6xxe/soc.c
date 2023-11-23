@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016 Nordic Semiconductor ASA
+ * Copyright (c) 2023 InPlay Inc.
  *
  * SPDX-License-Identifier: Apache-2.0
  */
