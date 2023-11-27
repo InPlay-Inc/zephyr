@@ -718,3 +718,4 @@ zinitix	Zinitix Co., Ltd
 zkmagic	Shenzhen Zkmagic Technology Co., Ltd.
 zte	ZTE Corp.
 zyxel	ZyXEL Communications Corp.
+inplay	Inplay Inc.

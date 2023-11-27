@@ -21,15 +21,11 @@
 #define LOG_LEVEL CONFIG_SOC_LOG_LEVEL
 LOG_MODULE_REGISTER(soc);
 
-
-
+extern void SystemInit(void);
 static int inplay_6xxe_init(void)
 {
-
-
+    SystemInit();
 	return 0;
 }
-
-
 
 SYS_INIT(inplay_6xxe_init, PRE_KERNEL_1, 0);

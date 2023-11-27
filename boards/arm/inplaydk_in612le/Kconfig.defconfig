@@ -10,3 +10,9 @@ config BOARD
 
 endif # BOARD_INPLAYDK_IN612LE
 
+choice BT_HCI_BUS_TYPE
+    default BT_IN6XX if BT
+endchoice
+
+config BT_HCI_ACL_FLOW_CONTROL
+	default n if BT

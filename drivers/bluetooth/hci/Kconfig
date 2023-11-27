@@ -102,6 +102,11 @@ config BT_PSOC6_BLESS
 	help
 	  PSOC6 BLESS driver with BLE Controller which operates in
 	  Single CPU mode.
+	  
+config BT_IN6XX
+	bool "IN6XX HCI driver"
+	help
+	  Inplay HCI bluetooth interface
 
 config BT_NO_DRIVER
 	bool "No default HCI driver"
