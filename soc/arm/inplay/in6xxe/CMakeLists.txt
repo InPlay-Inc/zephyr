@@ -11,3 +11,5 @@ zephyr_library_include_directories(
   ${ZEPHYR_BASE}/arch/arm/include
   ${ZEPHYR_BASE}/soc/arm/common/cortex_m
   )
+
+set(SOC_LINKER_SCRIPT ${CMAKE_CURRENT_SOURCE_DIR}/linker.ld CACHE INTERNAL "")

@@ -13,16 +13,16 @@
 
 #include <zephyr/drivers/bluetooth/hci_driver.h>
 
-#include <zephyr/logging/log.h>
 #include "in_ble_api.h"
 #include "ble_app.h"
 
+#define LOG_LEVEL CONFIG_BT_HCI_DRIVER_LOG_LEVEL
+#include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(bt_hci_driver_in6xx);
 
 static struct k_thread in6xx_ble_thread_data;
 static void *ble_hdl;
 static K_KERNEL_STACK_DEFINE(in6xx_ble_thread_stack, 4096);
-
 
 static K_SEM_DEFINE(ble_stack_sem, 0, 10);
 
@@ -160,48 +160,6 @@ static struct net_buf *bt_in6xx_acl_recv(uint8_t *data, size_t remaining)
 	return buf;
 }
 
-static struct net_buf *bt_in6xx_iso_recv(uint8_t *data, size_t remaining)
-{
-	struct bt_hci_iso_hdr hdr;
-	struct net_buf *buf;
-	size_t buf_tailroom;
-
-	if (remaining < sizeof(hdr)) {
-		LOG_ERR("Not enough data for ISO header");
-		return NULL;
-	}
-
-	buf = bt_buf_get_rx(BT_BUF_ISO_IN, K_NO_WAIT);
-	if (buf) {
-		memcpy((void *)&hdr, data, sizeof(hdr));
-		data += sizeof(hdr);
-		remaining -= sizeof(hdr);
-
-		net_buf_add_mem(buf, &hdr, sizeof(hdr));
-	} else {
-		LOG_ERR("No available ISO buffers!");
-		return NULL;
-	}
-
-	if (remaining != bt_iso_hdr_len(sys_le16_to_cpu(hdr.len))) {
-		LOG_ERR("ISO payload length is not correct");
-		net_buf_unref(buf);
-		return NULL;
-	}
-
-	buf_tailroom = net_buf_tailroom(buf);
-	if (buf_tailroom < remaining) {
-		LOG_ERR("Not enough space in buffer %zu/%zu", remaining, buf_tailroom);
-		net_buf_unref(buf);
-		return NULL;
-	}
-
-	LOG_DBG("len %zu", remaining);
-	net_buf_add_mem(buf, data, remaining);
-
-	return buf;
-}
-
 static int bt_in6xx_send(struct net_buf *buf)
 {
     int err = 0;
@@ -224,7 +182,9 @@ static int bt_in6xx_send(struct net_buf *buf)
 
 	LOG_HEXDUMP_DBG(buf->data, buf->len, "Final HCI buffer:");
 
-    in_ble_vhci_host_send(ble_hdl, buf->data, buf->len);
+    if (0 != in_ble_vhci_host_send(ble_hdl, buf->data, buf->len)) {
+        LOG_ERR("in6xx hci send err\n");
+    }
 
 done:
 	net_buf_unref(buf);
@@ -251,10 +211,6 @@ void in_ble_vhci_rx_cb(uint8_t type, uint8_t *data, uint16_t len)
 		buf = bt_in6xx_acl_recv(data, remaining);
 		break;
 
-	case HCI_SCO:
-		buf = bt_in6xx_iso_recv(data, remaining);
-		break;
-
 	default:
 		LOG_ERR("Unknown HCI type %u", pkt_indicator);
         return;
@@ -274,7 +230,7 @@ static int bt_in6xx_open(void)
 	tid = k_thread_create(&in6xx_ble_thread_data, in6xx_ble_thread_stack,
 			      K_KERNEL_STACK_SIZEOF(in6xx_ble_thread_stack),
 			      in6xx_ble_thread, NULL, NULL, NULL,
-			      K_PRIO_COOP(2), K_FP_REGS, K_NO_WAIT);
+			      K_PRIO_COOP(0), K_FP_REGS, K_NO_WAIT);
     if (tid != NULL) {
         printk("ble stack task created\n");
     }

@@ -15,7 +15,7 @@ config XIP
 	bool
 	default y
 config FLASH_LOAD_OFFSET
-	default 0x4000
+	default 0x0
 config SRAM_BASE_ADDRESS
 	hex
 	default 0x202000
