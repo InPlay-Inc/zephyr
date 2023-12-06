@@ -42,16 +42,62 @@
 			status = "okay";
 			label = "PINCTRL";
 
-			gpio0: gpio@44126000 {
+			gpio0: gpio@0 {
 				compatible = "inplay,in6xxe-gpio";
 				gpio-controller;
 				reg = <0x44126000 0x1000>;
 				#gpio-cells = <2>;
+				ngpios = <9>;
+				interrupts = <67 0>;
 				status = "disabled";
 				port = <0>;
 			};
-	
-		};	
+
+			gpio1: gpio@1 {
+				compatible = "inplay,in6xxe-gpio";
+				gpio-controller;
+				reg = <0x44126000 0x1000>;
+				#gpio-cells = <2>;
+				ngpios = <10>;
+				interrupts = <68 0>;
+				status = "disabled";
+				port = <1>;
+			};
+
+			gpio2: gpio@2 {
+				compatible = "inplay,in6xxe-gpio";
+				gpio-controller;
+				reg = <0x44126000 0x1000>;
+				#gpio-cells = <2>;
+				ngpios = <10>;
+				interrupts = <69 0>;
+				status = "disabled";
+				port = <2>;
+			};
+
+			gpio3: gpio@3 {
+				compatible = "inplay,in6xxe-gpio";
+				gpio-controller;
+				reg = <0x44126000 0x1000>;
+				#gpio-cells = <2>;
+				ngpios = <6>;
+				interrupts = <70 0>;
+				status = "disabled";
+				port = <3>;
+			};
+
+			gpio4: gpio@4 {
+				compatible = "inplay,in6xxe-gpio";
+				gpio-controller;
+				reg = <0x44126000 0x1000>;
+				#gpio-cells = <2>;
+				ngpios = <4>;
+				interrupts = <71 0>;
+				status = "disabled";
+				port = <4>;
+			};
+		};
+
 		uart0: usart@44100000{
 			compatible = "inplay,in6xxe-uart";
 			reg = <0x44100000 0x1000>;

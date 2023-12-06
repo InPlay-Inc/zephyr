@@ -13,15 +13,17 @@
 
 
 #include <zephyr/drivers/gpio/gpio_utils.h>
+#include <zephyr/irq.h>
 
 #include <hal/hal_gpio.h>
-
-
+#include <hal/hal_clk.h>
 
 struct gpio_in6xxe_config {
 	struct gpio_driver_config common;
-	int port;
-
+	uint8_t port;
+	uint8_t irq;
+	uint8_t irq_priority;
+	uint8_t ngpios;
 };
 
 struct gpio_in6xxe_data {
@@ -36,12 +38,36 @@ struct gpio_in6xxe_data {
  * @param line EXTI line (equals to GPIO pin number).
  * @param arg GPIO port instance.
  */
-static void gpio_in6xxe_isr(uint8_t line, void *arg)
+static void gpio_in6xxe_isr(const void *arg)
 {
 	const struct device *dev = arg;
 	struct gpio_in6xxe_data *data = dev->data;
+	const struct gpio_in6xxe_config *config = dev->config;
+	uint8_t ngpios = config->ngpios;
 
-	//gpio_fire_callbacks(&data->callbacks, dev, BIT(line));
+	uint32_t pins, status;
+	if (config->port == 0) {
+		status = gpio_port_0_int_status();
+		gpio_port_0_int_clear_all();
+	} else if (config->port == 1) {
+		status = gpio_port_1_int_status();
+		gpio_port_1_int_clear_all();
+	} else if (config->port == 2) {
+		status = gpio_port_2_int_status();
+		gpio_port_2_int_clear_all();
+	} else if (config->port == 3) {
+		status = gpio_port_3_int_status();
+		gpio_port_3_int_clear_all();
+	} else if (config->port == 4) {
+		status = gpio_port_4_int_status();
+		gpio_port_4_int_clear_all();
+	} else {
+		return;
+	}
+
+	status &= GPIO_PORT_PIN_MASK_FROM_NGPIOS(ngpios<<1);
+	pins = ((status >> ngpios) | (status & GPIO_PORT_PIN_MASK_FROM_NGPIOS(ngpios)));
+	gpio_fire_callbacks(&data->callbacks, dev, pins);
 }
 
 /**
@@ -56,8 +82,6 @@ static void gpio_in6xxe_isr(uint8_t line, void *arg)
 static int gpio_in6xxe_configure_extiss(const struct device *dev,
 				      gpio_pin_t pin)
 {
-
-
 	return 0;
 }
 
@@ -180,17 +204,31 @@ static int gpio_in6xxe_pin_interrupt_configure(const struct device *dev,
 					     enum gpio_int_mode mode,
 					     enum gpio_int_trig trig)
 {
-	
+	const struct gpio_in6xxe_config *config = dev->config;
+	irq_connect_dynamic(config->irq, config->irq_priority, gpio_in6xxe_isr, dev, 0);
+	int res = 0;
 
-	return 0;
+	/* Enable GPIO interrupt clk */
+	hal_clk_gpio_intr(config->port, 1);
+	if (mode == GPIO_INT_MODE_DISABLED) {
+		res = hal_gpio_ext_int_mask(config->port, pin, 0, 0, 0);
+		irq_disable(config->irq);
+	} else if (mode == GPIO_INT_MODE_EDGE) {
+		res = hal_gpio_ext_int_unmask(config->port, pin, trig & GPIO_INT_TRIG_HIGH,
+				trig & GPIO_INT_TRIG_HIGH, 0);
+		irq_enable(config->irq);
+	} else {
+		/* not supported */
+	}
+
+	return res == GPIO_ERR_NO_ERROR ? 0 : -EINVAL;
 }
 
 static int gpio_in6xxe_manage_callback(const struct device *dev,
 				     struct gpio_callback *callback, bool set)
 {
-	//struct gpio_in6xxe_data *data = dev->data;
-
-	//return gpio_manage_callback(&data->callbacks, callback, set);
+	struct gpio_in6xxe_data *data = dev->data;
+	return gpio_manage_callback(&data->callbacks, callback, set);
 }
 
 static const struct gpio_driver_api gpio_in6xxe_api = {
@@ -201,15 +239,13 @@ static const struct gpio_driver_api gpio_in6xxe_api = {
 	.port_clear_bits_raw = gpio_in6xxe_port_clear_bits_raw,
 	.port_toggle_bits = gpio_in6xxe_port_toggle_bits,
 	.pin_interrupt_configure = gpio_in6xxe_pin_interrupt_configure,
-	//.manage_callback = gpio_in6xxe_manage_callback,
+	.manage_callback = gpio_in6xxe_manage_callback,
 };
 
 static int gpio_in6xxe_init(const struct device *port)
 {
 	const struct gpio_in6xxe_config *config = port->config;
 	hal_gpio_init();
-
-
 	return 0;
 }
 
@@ -220,6 +256,9 @@ static int gpio_in6xxe_init(const struct device *port)
 			GPIO_PORT_PIN_MASK_FROM_DT_INST(id),		\
 		},							\
 		.port = id,		\
+		.irq = DT_IRQ_BY_IDX(DT_DRV_INST(id), 0, irq), \
+		.irq_priority  = DT_IRQ_BY_IDX(DT_DRV_INST(id), 0, priority), \
+		.ngpios = DT_PROP(DT_DRV_INST(id), ngpios), \
 	};								\
 									\
 	static struct gpio_in6xxe_data gpio_in6xxe_p##id##_data;		\
