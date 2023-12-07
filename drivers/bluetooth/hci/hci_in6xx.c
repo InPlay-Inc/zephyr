@@ -15,7 +15,7 @@
 
 #include "in_ble_api.h"
 #include "ble_app.h"
-
+#include "in_irq.h"
 #define LOG_LEVEL CONFIG_BT_HCI_DRIVER_LOG_LEVEL
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(bt_hci_driver_in6xx);
@@ -238,7 +238,10 @@ static int bt_in6xx_open(void)
 
     return 0;
 }
-
+static void __attribute__((section("ISR"))) bt_in6xx_isr(const struct device *dev)
+{
+	ble_isr_cb(NULL);
+}
 static const struct bt_hci_driver drv = {
 	.name           = "BT IN6XX",
 	.open           = bt_in6xx_open,
@@ -261,6 +264,13 @@ static int bt_in6xx_init(void)
     }
     in_ble_vhci_host_register_callback(in_ble_vhci_rx_cb);
     bt_hci_driver_register(&drv);
+	IRQ_CONNECT(Ble_IRQn,
+			    0,
+			    bt_in6xx_isr,	
+			    NULL,
+			    0);
+	irq_enable(Ble_IRQn);	
+
     return 0;
 }
 
