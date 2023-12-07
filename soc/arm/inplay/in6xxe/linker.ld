@@ -318,10 +318,14 @@ SECTIONS
 	{
 	__data_region_start = .;
 	__data_start = .;
+
 	*(.data)
 	*(".data.*")
 	*(".kernel.*")
-
+	*(ISR_RO)
+	*(BLE_RO)
+	*(RAM_PM)
+	*(BLE_RW)
 /* Located in generated directory. This file is populated by the
  * zephyr_linker_sources() Cmake function.
  */

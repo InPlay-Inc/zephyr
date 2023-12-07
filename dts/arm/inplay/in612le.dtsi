@@ -1,5 +1,5 @@
 /* SPDX-License-Identifier: Apache-2.0 */
-
+#include <mem.h>
 #include <arm/armv7-m.dtsi>
 #include <zephyr/dt-bindings/adc/adc.h>
 #include <zephyr/dt-bindings/adc/nrf-adc.h>
@@ -65,7 +65,21 @@
 			interrupts = <38 0>;
 			status = "disabled";
 		};
+		flash_controller: flash-controller@44107000 {
+			compatible = "inplay,in6xxe-flash-controller";
+			reg = <0x44107000 0x100>;
+			
+			#address-cells = <1>;
+			#size-cells = <1>;
 
+
+			flash0: flash@0 {
+				compatible = "soc-nv-flash";
+				reg = <0x00000000 DT_SIZE_K(512)>;
+				erase-block-size = <4096>;
+				write-block-size = <4>;
+			};
+		};
 	};
 };
 

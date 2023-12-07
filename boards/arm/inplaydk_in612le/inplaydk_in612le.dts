@@ -9,6 +9,9 @@
 	chosen {
 		zephyr,sram = &sram0;
         zephyr,console = &uart0;
+		zephyr,shell-uart = &uart0;
+		zephyr,flash = &flash0;
+		zephyr,code-partition = &code_partition;
 	};
 	leds {
 		compatible = "gpio-leds";
@@ -32,4 +35,31 @@
 	reg = <0x200000 DT_SIZE_K(128)>;
 };
 
+&flash0 {
 
+	partitions {
+		compatible = "fixed-partitions";
+		#address-cells = <1>;
+		#size-cells = <1>;
+		bootcfg_partition: partition@0 {
+			label = "bootcfg";
+			reg = <0x00000000 0x1000>;
+		};
+		bootram_partition: partition@1000 {
+			label = "bootram";
+			reg = <0x00001000 0x1C00>;
+		};
+		otainfo_partition: partition@3000 {
+			label = "otainfo";
+			reg = <0x00003000 0x1000>;
+		};
+		code_partition: partition@4000 {
+			label = "code-0";
+			reg = <0x00004000 0x70000>;
+		};
+		storage_partition: partition@74000 {
+			label = "storage";
+			reg = <0x00074000 0x0000C000>;
+		};
+	};
+};

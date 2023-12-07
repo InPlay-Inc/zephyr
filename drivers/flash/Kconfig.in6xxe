@@ -1,0 +1,13 @@
+# Copyright (c) 2023 InPlay Inc
+# SPDX-License-Identifier: Apache-2.0
+
+config SOC_FLASH_IN6XXE
+	bool "InPlay IN6XXE flash driver"
+	default y
+	depends on DT_HAS_INPLAY_IN6XXE_FLASH_CONTROLLER_ENABLED
+	select FLASH_HAS_DRIVER_ENABLED
+	select FLASH_HAS_PAGE_LAYOUT
+	help
+	  Enable IN6XXE internal flash driver.
+
+
