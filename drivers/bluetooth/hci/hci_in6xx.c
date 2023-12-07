@@ -265,7 +265,7 @@ static int bt_in6xx_init(void)
     in_ble_vhci_host_register_callback(in_ble_vhci_rx_cb);
     bt_hci_driver_register(&drv);
 	IRQ_CONNECT(Ble_IRQn,
-			    0,
+			    1,
 			    bt_in6xx_isr,	
 			    NULL,
 			    0);
