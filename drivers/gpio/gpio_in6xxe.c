@@ -215,7 +215,7 @@ static int gpio_in6xxe_pin_interrupt_configure(const struct device *dev,
 		irq_disable(config->irq);
 	} else if (mode == GPIO_INT_MODE_EDGE) {
 		res = hal_gpio_ext_int_unmask(config->port, pin, trig & GPIO_INT_TRIG_HIGH,
-				trig & GPIO_INT_TRIG_HIGH, 0);
+				trig & GPIO_INT_TRIG_LOW, 0);
 		irq_enable(config->irq);
 	} else {
 		/* not supported */
