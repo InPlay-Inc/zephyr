@@ -156,6 +156,13 @@ config HWINFO_ESP32
 	help
 	  Enable ESP32 hwinfo driver.
 
+config HWINFO_IN6XXE
+	bool "IN6XXE device ID"
+	default y
+	depends on SOC_SERIES_IN6XXE
+	help
+	  Enable IN6XXE hwinfo driver.
+
 config HWINFO_LITEX
 	bool "LiteX device ID"
 	default y
