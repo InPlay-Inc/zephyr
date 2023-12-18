@@ -324,6 +324,7 @@ SECTIONS
 	*(".kernel.*")
 	*(ISR_RO)
 	*(BLE_RO)
+	*(BLE_RODATA)
 	*(RAM_PM)
 	*(BLE_RW)
 /* Located in generated directory. This file is populated by the
