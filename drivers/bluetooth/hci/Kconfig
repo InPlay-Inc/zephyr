@@ -106,7 +106,14 @@ config BT_PSOC6_BLESS
 config BT_IN6XX
 	bool "IN6XX HCI driver"
 	help
-	  Inplay HCI bluetooth interface
+	  InPlay HCI bluetooth interface
+
+config IN6XXE_HCI_TL
+	bool "IN6XXE HCI Transport layer"
+	depends on BT_IN6XX
+	default n
+	help
+	  InPlay IN6XXE HCI Transport layer
 
 config BT_NO_DRIVER
 	bool "No default HCI driver"

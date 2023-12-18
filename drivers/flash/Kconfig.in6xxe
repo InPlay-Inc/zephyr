@@ -7,7 +7,7 @@ config SOC_FLASH_IN6XXE
 	depends on DT_HAS_INPLAY_IN6XXE_FLASH_CONTROLLER_ENABLED
 	select FLASH_HAS_DRIVER_ENABLED
 	select FLASH_HAS_PAGE_LAYOUT
-	help
+	help 
 	  Enable IN6XXE internal flash driver.
 
 

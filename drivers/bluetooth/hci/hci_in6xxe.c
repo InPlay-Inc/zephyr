@@ -30,7 +30,6 @@
 LOG_MODULE_REGISTER(bt_hci_driver_in6xx);
 #include "common/bt_str.h"
 
-//#define CONFIG_IN6XXE_HCI_TL
 
 #define HCI_NONE				0x00
 #define HCI_CMD                 0x01
@@ -79,6 +78,8 @@ static struct {
 
 static void in6xx_ble_thread(void *p1, void *p2, void *p3)
 {
+	uint32_t seed = hal_trng_gen();
+	srand(seed);
 	while (true) {
         k_sem_take(&ble_stack_sem, K_FOREVER);
 
@@ -368,6 +369,8 @@ static void cntl_hci_write(void *hdl, uint8_t *buffer, uint16_t buffer_len, void
 	if (buf) {
 		//LOG_DBG("Calling bt_recv(%p)", buf);
 		//LOG_HEXDUMP_DBG(buf->data, buf->len, "RECV buffer:");
+		//uint16_t op = buf->data[3] | (buf->data[4] << 8);
+
 		struct bt_hci_evt_hdr *hdr = (struct bt_hci_evt_hdr *)data;
 		uint8_t evt_flags = bt_hci_evt_get_flags(hdr->evt);
 		if (IS_ENABLED(CONFIG_BT_RECV_BLOCKING) && (evt_flags & BT_HCI_EVT_FLAG_RECV_PRIO)) {
@@ -385,7 +388,7 @@ static void cntl_hci_write(void *hdl, uint8_t *buffer, uint16_t buffer_len, void
 static int bt_in6xx_send(struct net_buf *buf)
 {
 	//LOG_DBG("buf %p type %u len %u fifo %x", buf, bt_buf_get_type(buf), buf->len,&host_tx.fifo);
-	uint16_t op = buf->data[0] | (buf->data[1] << 8);
+	//uint16_t op = buf->data[0] | (buf->data[1] << 8);
 
 	net_buf_put(&host_tx.fifo, buf);
 	k_sem_give(&host_tx.sem);
@@ -463,7 +466,7 @@ static int bt_in6xx_open(void)
 {
 	int ret;
 	k_tid_t tid;
-	
+
 #ifdef CONFIG_IN6XXE_HCI_TL
 	ret = k_sem_init(&host_tx.sem, 0, 16);
 	if (ret) {
@@ -540,7 +543,7 @@ static const struct bt_hci_driver drv = {
 
 static int bt_in6xx_init(void)
 {
-	
+
     bt_hci_driver_register(&drv);
 
     return 0;
