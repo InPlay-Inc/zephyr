@@ -8,6 +8,7 @@ config UART_IN6XXE
 	default y
 	depends on DT_HAS_INPLAY_IN6XXE_UART_ENABLED
 	select SERIAL_HAS_DRIVER
+	select SERIAL_SUPPORT_INTERRUPT
 	help
 	  This option enables the UART driver for INI6XXE.
 

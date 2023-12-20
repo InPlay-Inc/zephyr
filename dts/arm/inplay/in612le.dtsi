@@ -101,14 +101,14 @@
 		uart0: usart@44100000{
 			compatible = "inplay,in6xxe-uart";
 			reg = <0x44100000 0x1000>;
-			interrupts = <37 2>;
+			interrupts = <14 2>;
 			status = "disabled";
 		};
 
 		uart1: usart@44101000{
 			compatible = "inplay,in6xxe-uart";
 			reg = <0x44101000 0x1000>;
-			interrupts = <38 2>;
+			interrupts = <15 2>;
 			status = "disabled";
 		};
 		flash_controller: flash-controller@44107000 {

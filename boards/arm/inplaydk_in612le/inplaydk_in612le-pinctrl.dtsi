@@ -4,8 +4,17 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-//#include <dt-bindings/pinctrl/inplay-in6xx-pinctrl.h>
+#include <dt-bindings/pinctrl/in6xxe-pinctrl.h>
 
 &pinctrl {
-
+	uart0_default: uart0_default {
+		group1 {
+			pinmux = <UART0_TX_GPIO_0_2>, <UART0_RX_GPIO_1_0>;
+		};
+	};
+	uart1_default: uart1_default {
+		group1 {
+			pinmux = <UART1_TX_GPIO_2_1>, <UART1_RX_GPIO_2_7>;
+		};
+	};
 };

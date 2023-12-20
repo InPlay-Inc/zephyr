@@ -5,10 +5,7 @@ description: |
     The INPLAY pin controller is a singleton node responsible for
     controlling pin function selection and pin properties. 
 
-
-
 compatible: "inplay,in6xxe-pinctrl"
-
 
 child-binding:
   description: |
@@ -16,6 +13,15 @@ child-binding:
   child-binding:
     description: |
       The grandchild nodes group pins that share the same pin configuration.
+    include:
+      - name: pincfg-node.yaml
+        property-allowlist:
+          - drive-push-pull
+          - drive-open-drain
+          - bias-disable
+          - bias-pull-down
+          - bias-pull-up
+
     properties:
       slew-rate:
         type: string
@@ -29,3 +35,9 @@ child-binding:
           Set the maximum speed of a pin. This setting effectively limits the
           slew rate of the output signal. Defaults to "max-speed-2mhz", the SoC
           default.
+      pinmux:
+        required: true
+        type: array
+        description: |
+          An array of pins sharing the same group properties. The pins should
+          be defined using IN6XXE_PINMUX macro.
