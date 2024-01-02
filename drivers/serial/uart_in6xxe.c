@@ -12,6 +12,7 @@
 #include <zephyr/drivers/reset.h>
 #include <zephyr/drivers/uart.h>
 #include <zephyr/irq.h>
+#include <zephyr/pm/device.h>
 
 #include "hal/hal_clk.h"
 #include "hal/hal_uart.h"
@@ -176,6 +177,7 @@ static const struct uart_driver_api uart_in6xx_driver_api = {
 #endif
 };
 
+
 static int uart_in6xx_init(const struct device *dev)
 {
 	int ret;
@@ -214,6 +216,24 @@ static int uart_in6xx_init(const struct device *dev)
 	return 0;
 }
 
+static int uart_in6xx_pm_action(const struct device *dev,
+                                  enum pm_device_action action)
+{
+    switch (action) {
+    case PM_DEVICE_ACTION_SUSPEND:
+        /* suspend the device */
+        break;
+    case PM_DEVICE_ACTION_RESUME:
+		uart_in6xx_init(dev);
+        /* resume the device */
+        break;
+    default:
+        return -ENOTSUP;
+    }
+
+    return 0;
+}
+
 #ifdef CONFIG_UART_INTERRUPT_DRIVEN
 #define IN6XX_UART_IRQ_HANDLER(n)										\
 	static void uart_in6xx_config_func_##n(const struct device *dev)	\
@@ -233,6 +253,7 @@ static int uart_in6xx_init(const struct device *dev)
 #endif /* CONFIG_UART_INTERRUPT_DRIVEN */
 
 #define IN6XX_UART_INIT(n)                              				\
+	PM_DEVICE_DT_INST_DEFINE(n, uart_in6xx_pm_action);                  \
 	PINCTRL_DT_INST_DEFINE(n);						                    \
 	IN6XX_UART_IRQ_HANDLER(n)                                           \
 	static struct in6xx_uart_data uart_in6xx_data_##n = {				\
@@ -244,7 +265,7 @@ static int uart_in6xx_init(const struct device *dev)
 		IN6XX_UART_IRQ_HANDLER_FUNC_INIT(n)                             \
 	};                                                  				\
 	DEVICE_DT_INST_DEFINE(n, &uart_in6xx_init,							\
-			      NULL,						            				\
+			      PM_DEVICE_DT_INST_GET(n), \
 			      &uart_in6xx_data_##n,				                    \
 			      &uart_in6xx_config_##n,                PRE_KERNEL_1,	\
 			      CONFIG_SERIAL_INIT_PRIORITY,							\

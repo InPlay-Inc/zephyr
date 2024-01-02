@@ -1,0 +1,29 @@
+# Copyright (c) 2023, Inplay Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+description: IN6XXE AON timers
+
+compatible: "inplay,in6xxe-aon-tmr"
+
+include: base.yaml
+
+properties:
+  index:
+    required: true
+    type: int
+    enum:
+      - 0
+      - 1
+      - 2
+      - 3
+    description: Index of IN6XXE AON timers.
+
+  channel-num:
+    type: int
+    default: 0
+    description: Alarm channel count the timer supports, only AON timer2 has two emit signals.
+
+  is-64bit:
+    type: boolean
+    description: If the timer is 64bit
+

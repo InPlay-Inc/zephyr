@@ -1,0 +1,8 @@
+# Copyright (c) 2021, Kent Hall
+# SPDX-License-Identifier: Apache-2.0
+
+description: IN6XXE PD1 timers
+
+compatible: "inplay,in6xxe-tmr"
+
+include: base.yaml

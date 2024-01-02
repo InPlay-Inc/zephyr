@@ -1,0 +1,12 @@
+# Copyright (c) 2023 Inplay Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+config IN6XXE_SYS_TIMER
+	bool "Inplay IN6XXE always on system clock timer"
+	default y
+	depends on PM
+	depends on SOC_FAMILY_INPLAY
+	select TICKLESS_CAPABLE
+	help
+	  This module implements a kernel device driver for the IN6XXE AON Timer and
+	  provides the standard "system clock driver" interfaces.

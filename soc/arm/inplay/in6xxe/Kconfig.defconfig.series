@@ -10,4 +10,10 @@ source "soc/arm/inplay/in6xxe/Kconfig.defconfig.in6xxe*"
 config SOC_SERIES
 	default "in6xxe"
 
+config CORTEX_M_SYSTICK
+	default n if PM
+
+config PM_DEVICE
+	default y if PM
+
 endif # SOC_SERIES_IN6XXE

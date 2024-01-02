@@ -20,11 +20,22 @@
 			reg = <0>;
 			#address-cells = <1>;
 			#size-cells = <1>;
+			cpu-power-states = <&deep_sleep>;
 
 			itm: itm@e0000000 {
 				compatible = "arm,armv7m-itm";
 				reg = <0xe0000000 0x1000>;
 				swo-ref-frequency = <32000000>;
+			};
+		};
+
+		power-states {
+			deep_sleep: state0 {
+				compatible = "zephyr,power-state";
+				power-state-name = "suspend-to-idle";
+				substate-id = <1>;
+				min-residency-us = <5000>;
+				exit-latency-us = <700>;
 			};
 		};
 	};
@@ -125,6 +136,29 @@
 				erase-block-size = <4096>;
 				write-block-size = <4>;
 			};
+		};
+
+		aon_timer0: aon_timer@0x44126C40 {
+			compatible = "inplay,in6xxe-aon-tmr";
+			index = <0>;
+			reg = <0x44126C40 8>;
+		};
+		aon_timer1: aon_timer@0x44126C48 {
+			compatible = "inplay,in6xxe-aon-tmr";
+			index = <1>;
+			reg = <0x44126C48 8>;
+		};
+		aon_timer2: aon_timer@0x44126C50 {
+			compatible = "inplay,in6xxe-aon-tmr";
+			index = <2>;
+			reg = <0x44126C50 8>;
+			channel-num = <2>;
+		};
+		aon_timer3: aon_timer@0x44126C58 {
+			compatible = "inplay,in6xxe-aon-tmr";
+			index = <3>;
+			reg = <0x44126C58 8>;
+			is-64bit;
 		};
 	};
 };

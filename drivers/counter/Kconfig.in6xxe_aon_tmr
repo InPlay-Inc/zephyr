@@ -1,0 +1,12 @@
+# IN6XXE AON counter timer configuration options
+
+# Copyright (c) 2023 Inplay Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+config COUNTER_AON_TIMER_IN6XXE
+	bool "IN6XXE AON timer counter driver"
+	default y
+	depends on DT_HAS_INPLAY_IN6XXE_AON_TMR_ENABLED && SOC_FAMILY_INPLAY
+	help
+	  Enable AON counter timer driver for IN6XXE series devices.
+

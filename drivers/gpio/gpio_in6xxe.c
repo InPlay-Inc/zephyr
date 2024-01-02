@@ -117,6 +117,7 @@ static inline int gpio_in6xxe_configure(const struct device *dev, gpio_pin_t pin
 		res = hal_gpio_pad_oe_ie(port, pin, 0, 1);
 		res = hal_gpio_output(port, pin, 0, 0);
 	}
+	hal_gpio_sleep_pad_latch(port, pin, 1, 0);
 	if (res)
 		res = -EINVAL;
 	return res;
