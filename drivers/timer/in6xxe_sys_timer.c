@@ -18,13 +18,13 @@
 #include <hal/hal_timer.h>
 #include <in_irq.h>
 
-#define COUNTER_MAX UINT32_MAX
+#define COUNTER_MAX 0xFFFFFFFFUL
 
 #define CYC_PER_TICK (sys_clock_hw_cycles_per_sec()	\
 		      / CONFIG_SYS_CLOCK_TICKS_PER_SEC)
 #define MAX_TICKS ((k_ticks_t)(COUNTER_MAX / CYC_PER_TICK) - 1)
 #define MAX_CYCLES (MAX_TICKS * CYC_PER_TICK)
-#define MIN_DELAY 1
+#define MIN_DELAY 3
 
 /* Timer count down, assume interval < COUNTER_MAX*/
 #define COUNTER_DIFF(now, last) ((now) < (last) ? ((last) - (now)) : (COUNTER_MAX - (now) + (last)))
@@ -42,12 +42,16 @@ extern void delay_us(uint32_t);
 
 static uint32_t aon_tmr2_get(void)
 {
+	k_spinlock_key_t key = k_spin_lock(&g_lock);
 	aon_tmr2_snap_tick();
-	return aon_tmr2_read_tick();
+	uint32_t tick = aon_tmr2_read_tick();
+	k_spin_unlock(&g_lock, key);
+	return tick;
 }
 
 static void aon_tmr2_set_emit(int id, uint32_t tick)
 {
+	//printk("emit:%u\n", tick);
 	aon_tmr_emit_set_tick(id, tick);
 }
 
@@ -68,10 +72,16 @@ static void aon_tmr2_isr(const void *arg)
 		uint32_t now = aon_tmr2_get();
 		uint32_t dticks = (uint32_t)(COUNTER_DIFF(now, g_last_count) / CYC_PER_TICK);
 
-		g_last_count = now;
+		/* g_last_count should align with ticks */
+		g_last_count = COUNTER_ADD(g_last_count, dticks*CYC_PER_TICK);
 
 		if (!IS_ENABLED(CONFIG_TICKLESS_KERNEL)) {
 			uint32_t next = COUNTER_ADD(g_last_count, CYC_PER_TICK);
+
+			if (COUNTER_DIFF(next, now) < MIN_DELAY) {
+				next += CYC_PER_TICK;
+			}
+
 			aon_tmr_emit_set_tick(AON_EMIT0_ID, next);
 		}
 
@@ -91,9 +101,24 @@ void sys_clock_set_timeout(int32_t ticks, bool idle)
 	k_spinlock_key_t key = k_spin_lock(&g_lock);
 
 	uint32_t now = aon_tmr2_get();
-	uint32_t cyc = ticks * CYC_PER_TICK;
 
-	aon_tmr2_set_emit(AON_EMIT0_ID, COUNTER_ADD(now, cyc));
+	uint32_t adj, cyc = ticks * CYC_PER_TICK;
+
+	/* Round up to next tick boundary. */
+	adj = (uint32_t)(COUNTER_DIFF(now, g_last_count)) + (CYC_PER_TICK - 1);
+	if (cyc <= MAX_CYCLES - adj) {
+		cyc += adj;
+	} else {
+		cyc = MAX_CYCLES;
+	}
+	cyc = (cyc / CYC_PER_TICK) * CYC_PER_TICK;
+
+	uint32_t next_count = COUNTER_ADD(g_last_count, cyc);
+	if ((int32_t)COUNTER_DIFF(next_count, now) < MIN_DELAY) {
+		cyc += CYC_PER_TICK;
+	}
+
+	aon_tmr2_set_emit(AON_EMIT0_ID, COUNTER_ADD(g_last_count, cyc));
 
 	k_spin_unlock(&g_lock, key);
 }
@@ -106,19 +131,18 @@ uint32_t sys_clock_elapsed(void)
 
 	k_spinlock_key_t key = k_spin_lock(&g_lock);
 	uint32_t ret = COUNTER_DIFF(aon_tmr2_get(), g_last_count) / CYC_PER_TICK;
-
 	k_spin_unlock(&g_lock, key);
-	return 0;
+	return ret;
 }
 
 uint32_t sys_clock_cycle_get_32(void)
 {
-	return aon_tmr2_get();
+	return COUNTER_MAX - aon_tmr2_get();
 }
 
 uint64_t sys_clock_cycle_get_64(void)
 {
-	return aon_tmr2_get();
+	return COUNTER_MAX - aon_tmr2_get();
 }
 
 static int sys_clock_driver_init(void)
@@ -130,6 +154,7 @@ static int sys_clock_driver_init(void)
 	aon_tmr2_reload_en();
 
 	aon_tmr2_init_tick(COUNTER_MAX);
+	g_last_count = 0;
 
 	// enable
 	aon_tmr2_en();

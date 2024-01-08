@@ -21,15 +21,23 @@
 #include <zephyr/bluetooth/bluetooth.h>
 #include <zephyr/bluetooth/hci.h>
 #include <zephyr/drivers/bluetooth/hci_driver.h>
+#include <zephyr/device.h>
+#include <zephyr/pm/device.h>
+#include <zephyr/pm/policy.h>
 
 #include "in_ble_api.h"
 #include "ble_app.h"
 #include "in_irq.h"
+#include "hal/hal_trng.h"
+#include <stdlib.h>
+
 #define LOG_LEVEL CONFIG_BT_HCI_DRIVER_LOG_LEVEL
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(bt_hci_driver_in6xx);
 #include "common/bt_str.h"
 
+#define PM_DEEP_SLEEP  2
+#define MIN_SLEEP_TIME 5000 //us
 
 #define HCI_NONE				0x00
 #define HCI_CMD                 0x01
@@ -43,10 +51,9 @@ LOG_MODULE_REGISTER(bt_hci_driver_in6xx);
 
 typedef  void(*HCI_RX_CB)(void *arg, uint8_t status);
 
-
-
 static struct k_thread in6xx_ble_thread_data;
 static void *ble_hdl;
+static uint32_t g_sleep_dur;
 static K_KERNEL_STACK_DEFINE(in6xx_ble_thread_stack, 4096);
 
 static K_SEM_DEFINE(ble_stack_sem, 0, 10);
@@ -72,19 +79,26 @@ static struct {
 };
 #endif
 
+extern int rwip_power_state(void *arg, uint32_t *duration);
+extern void rwip_power_up(void *arg);
+extern void rwip_power_down(void *arg, uint32_t duration);
 
-
-
+/* Check if BLE can enter deep sleep */
+bool in6xxe_ble_sleep(void)
+{
+	g_sleep_dur = 0xffffffff;
+	int state = rwip_power_state(ble_hdl, &g_sleep_dur);
+	return (state == PM_DEEP_SLEEP && g_sleep_dur >= MIN_SLEEP_TIME);
+}
 
 static void in6xx_ble_thread(void *p1, void *p2, void *p3)
 {
 	uint32_t seed = hal_trng_gen();
 	srand(seed);
+
 	while (true) {
-        k_sem_take(&ble_stack_sem, K_FOREVER);
-
-        in_ble_stack_handler(ble_hdl);
-
+		k_sem_take(&ble_stack_sem, K_FOREVER);
+		in_ble_stack_handler(ble_hdl);
 	}
 }
 
@@ -207,15 +221,6 @@ static struct net_buf *bt_in6xx_acl_recv(uint8_t *data, size_t remaining)
 
 	return buf;
 }
-
-
-
-
-
-
-
-
-
 
 static void __attribute__((section("ISR"))) bt_in6xx_isr(const struct device *dev)
 {
@@ -461,7 +466,6 @@ void in_ble_vhci_rx_cb(uint8_t type, uint8_t *data, uint16_t len)
 }
 #endif
 
-
 static int bt_in6xx_open(void)
 {
 	int ret;
@@ -484,10 +488,7 @@ static int bt_in6xx_open(void)
     } else {				  
 		k_thread_name_set(tid, "in6xxe_host_tx_thread");
 	}
-
-
 #endif
-
 
 	tid = k_thread_create(&in6xx_ble_thread_data, in6xx_ble_thread_stack,
 			      K_KERNEL_STACK_SIZEOF(in6xx_ble_thread_stack),
@@ -498,10 +499,6 @@ static int bt_in6xx_open(void)
     } else {
 		k_thread_name_set(tid, "in6xx_ble_thread");
 	}
-	
-
-		
-
 
     ble_stack_cb_t ble_stack_cb;
     uint8_t bd_addr[6] = {0x00, 0x01, 0x02, 0x03, 0x04, 0xdd};
@@ -529,8 +526,6 @@ static int bt_in6xx_open(void)
 	return 0;
 }
 
-
-
 static const struct bt_hci_driver drv = {
 	.name           = "BT IN6XX",
 	.open           = bt_in6xx_open,
@@ -541,12 +536,37 @@ static const struct bt_hci_driver drv = {
 #endif
 };
 
-static int bt_in6xx_init(void)
+static int in6xxe_hci_pm_action(const struct device *dev,
+                                  enum pm_device_action action)
 {
+    switch (action) {
+    case PM_DEVICE_ACTION_SUSPEND:
+        /* suspend the device */
+		rwip_power_down(ble_hdl, g_sleep_dur);
+        break;
+    case PM_DEVICE_ACTION_RESUME:
+        /* resume the device */
+		rwip_power_up(ble_hdl);
+        break;
+    default:
+        return -ENOTSUP;
+    }
+
+    return 0;
+}
+
+static int bt_in6xx_init(const struct device *dev)
+{
+	ARG_UNUSED(dev);
 
     bt_hci_driver_register(&drv);
 
     return 0;
 }
 
-SYS_INIT(bt_in6xx_init, POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEVICE);
+PM_DEVICE_DEFINE(in6xxe_ble_pm, in6xxe_hci_pm_action);
+
+DEVICE_DEFINE(in6xxe_hci, "in6xxe_ble", bt_in6xx_init,
+		PM_DEVICE_GET(in6xxe_ble_pm), NULL, NULL,
+		POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEVICE, NULL);
+
