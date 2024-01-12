@@ -59,6 +59,8 @@ void pm_state_exit_post_ops(enum pm_state state, uint8_t substate_id)
 		z_arm_irq_priority_set(Aon_Tmr_Misc_IRQn, 1, 0);
 		irq_enable(Aon_Tmr_Misc_IRQn);
 		aon_tmr_emit_int_mask_clear(AON_EMIT0_ID);
+		//clk_rc_bypass_en();
+		//hal_clk_calib_32k(5);
 		break;
 	default:
 		LOG_DBG("Unsupported power state %u", state);
@@ -78,6 +80,10 @@ const struct pm_state_info *pm_policy_next_state(uint8_t cpu, int32_t ticks)
 		return NULL;
 	}
 #endif
+
+	if (!hal_clk_32k_ready()) {
+		return NULL;
+	}
 
 #if CONFIG_BT_IN6XX
 	if (!in6xxe_ble_sleep()) {
