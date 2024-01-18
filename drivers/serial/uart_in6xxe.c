@@ -17,6 +17,7 @@
 #include "hal/hal_clk.h"
 #include "hal/hal_uart.h"
 #include "in_irq.h"
+#include "in_compile.h"
 
 struct in6xx_uart_config {
 	uint32_t base;
@@ -28,11 +29,23 @@ struct in6xx_uart_config {
 
 struct in6xx_uart_data {
 	uint32_t baud_rate;
+	bool need_resume;
 #ifdef CONFIG_UART_INTERRUPT_DRIVEN
 	uart_irq_callback_user_data_t user_cb;
 	void *user_data;
 #endif /* CONFIG_UART_INTERRUPT_DRIVEN */
 };
+
+static int RAM_PM uart_in6xx_init(const struct device *dev);
+
+static void RAM_PM uart_resume(const struct device *dev)
+{
+	struct in6xx_uart_data *data = dev->data;
+	if (data->need_resume) {
+		uart_in6xx_init(dev);
+		data->need_resume = false;
+	}
+}
 
 #ifdef CONFIG_UART_INTERRUPT_DRIVEN
 static void uart_in6xx_isr(const struct device *dev)
@@ -55,6 +68,7 @@ static int uart_in6xx_poll_in(const struct device *dev, unsigned char *p_char)
 static void uart_in6xx_poll_out(const struct device *dev, unsigned char out_char)
 {
 	const struct in6xx_uart_config *cfg = dev->config;
+	uart_resume(dev);
     uart_xmit_ready(cfg->base);
     uart_write_data(cfg->base, out_char);
 }
@@ -178,7 +192,7 @@ static const struct uart_driver_api uart_in6xx_driver_api = {
 };
 
 
-static int uart_in6xx_init(const struct device *dev)
+static int RAM_PM uart_in6xx_init(const struct device *dev)
 {
 	int ret;
 	const struct in6xx_uart_config *cfg = dev->config;
@@ -221,10 +235,13 @@ static int uart_in6xx_pm_action(const struct device *dev,
 {
     switch (action) {
     case PM_DEVICE_ACTION_SUSPEND:
-        /* suspend the device */
+		{
+			/* suspend the device */
+			struct in6xx_uart_data *data = dev->data;
+			data->need_resume = true;
+		}
         break;
     case PM_DEVICE_ACTION_RESUME:
-		uart_in6xx_init(dev);
         /* resume the device */
         break;
     default:
@@ -236,7 +253,7 @@ static int uart_in6xx_pm_action(const struct device *dev,
 
 #ifdef CONFIG_UART_INTERRUPT_DRIVEN
 #define IN6XX_UART_IRQ_HANDLER(n)										\
-	static void uart_in6xx_config_func_##n(const struct device *dev)	\
+	static void RAM_PM uart_in6xx_config_func_##n(const struct device *dev)	\
 	{																	\
 		IRQ_CONNECT(DT_INST_IRQN(n),									\
 			    DT_INST_IRQ(n, priority),								\
@@ -258,6 +275,7 @@ static int uart_in6xx_pm_action(const struct device *dev,
 	IN6XX_UART_IRQ_HANDLER(n)                                           \
 	static struct in6xx_uart_data uart_in6xx_data_##n = {				\
 		.baud_rate = DT_INST_PROP(n, current_speed),					\
+		.need_resume = 0,                                               \
 	};									                             	\
 	static const struct in6xx_uart_config uart_in6xx_config_##n = {		\
 		.base = DT_INST_REG_ADDR(n),									\

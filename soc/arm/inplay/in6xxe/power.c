@@ -3,6 +3,7 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  */
+
 #include "zephyr/arch/arm/irq.h"
 #include "zephyr/irq.h"
 #include <zephyr/kernel.h>
@@ -13,13 +14,16 @@
 #include <zephyr/logging/log.h>
 
 #include <zephyr/drivers/timer/system_timer.h>
-#include <cortex_m/exc.h>
 
 #include <hal/hal_global.h>
 #include <hal/hal_gpio.h>
 #include <hal/hal_timer.h>
+#include <in_arm.h>
 
-#define Aon_Tmr_Misc_IRQn 34
+#include <cortex_m/exc.h>
+#include <sys/_stdint.h>
+
+#include "in_compile.h"
 
 LOG_MODULE_DECLARE(soc, CONFIG_SOC_LOG_LEVEL);
 
@@ -31,15 +35,30 @@ void pm_state_set(enum pm_state state, uint8_t substate_id)
 {
 	switch (state) {
 	case PM_STATE_SUSPEND_TO_IDLE:
+		{
+			uint32_t primask = disable_irq();
 
-		hal_gpio_suspend();
-		hal_global_suspend();
+			hal_gpio_suspend();
+			hal_global_suspend();
 
-		shutdown_and_resume();
+			shutdown_and_resume();
 
-		hal_global_resume();				
-		hal_gpio_resume();
+			hal_global_resume();				
+			hal_gpio_resume();
 
+			/* Cortex-M core registers are lost when entering deep sleep, so recover them here */
+			z_arm_exc_setup();
+
+			/* These are PD1 registers, which should be recovered when wakeup */
+			z_arm_irq_priority_set(Aon_Tmr_Misc_IRQn, 2, 0);
+			irq_enable(Aon_Tmr_Misc_IRQn);
+			aon_tmr_emit_int_mask_clear(AON_EMIT0_ID);
+
+			//clk_rc_bypass_en();
+			//hal_clk_calib_32k(5);
+
+			__set_PRIMASK(primask);
+		}
 		break;
 	default:
 		LOG_DBG("Unsupported power state %u", state);
@@ -48,19 +67,13 @@ void pm_state_set(enum pm_state state, uint8_t substate_id)
 }
 
 /* Handle SOC specific activity after Low Power Mode Exit */
-void pm_state_exit_post_ops(enum pm_state state, uint8_t substate_id)
+void RAM_PM pm_state_exit_post_ops(enum pm_state state, uint8_t substate_id)
 {
 	switch (state) {
 	case PM_STATE_SUSPEND_TO_IDLE:
-		/* Cortex-M core registers are lost when entering deep sleep, so recover them here */
-		z_arm_exc_setup();
-		arch_irq_unlock(0);
-		/* These are PD1 registers, which should be recovered when wakeup */
-		z_arm_irq_priority_set(Aon_Tmr_Misc_IRQn, 1, 0);
-		irq_enable(Aon_Tmr_Misc_IRQn);
-		aon_tmr_emit_int_mask_clear(AON_EMIT0_ID);
-		//clk_rc_bypass_en();
-		//hal_clk_calib_32k(5);
+		{
+			irq_unlock(0);
+		}
 		break;
 	default:
 		LOG_DBG("Unsupported power state %u", state);
@@ -69,7 +82,7 @@ void pm_state_exit_post_ops(enum pm_state state, uint8_t substate_id)
 }
 
 #ifdef CONFIG_PM_POLICY_CUSTOM
-const struct pm_state_info *pm_policy_next_state(uint8_t cpu, int32_t ticks)
+const struct pm_state_info * RAM_PM pm_policy_next_state(uint8_t cpu, int32_t ticks)
 {
 	int64_t cyc = -1;
 	uint8_t num_cpu_states;

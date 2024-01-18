@@ -25,10 +25,15 @@
 #include <zephyr/pm/device.h>
 #include <zephyr/pm/policy.h>
 
+#include "cmsis_gcc.h"
+#include "hal/hal_gpio.h"
+#include "in_arm.h"
 #include "in_ble_api.h"
 #include "ble_app.h"
 #include "in_irq.h"
 #include "hal/hal_trng.h"
+#include "hal/hal_global.h"
+#include "zephyr/irq.h"
 #include <stdlib.h>
 
 #define LOG_LEVEL CONFIG_BT_HCI_DRIVER_LOG_LEVEL
@@ -48,6 +53,9 @@ LOG_MODULE_REGISTER(bt_hci_driver_in6xx);
 
 #define CNTL_RX_EVT 0x01
 #define HOST_TX_EVT 0x02
+
+#define BLE_IRQ_PRIO 0  /* BLE interrupt priority should be highest */
+#define SWI_IRQ_PRIO 1
 
 typedef  void(*HCI_RX_CB)(void *arg, uint8_t status);
 
@@ -82,13 +90,20 @@ static struct {
 extern int rwip_power_state(void *arg, uint32_t *duration);
 extern void rwip_power_up(void *arg);
 extern void rwip_power_down(void *arg, uint32_t duration);
+extern void SWI_Handler(void *arg);
+
+static int swi_num;
 
 /* Check if BLE can enter deep sleep */
 bool in6xxe_ble_sleep(void)
 {
+	bool sleep;
 	g_sleep_dur = 0xffffffff;
-	int state = rwip_power_state(ble_hdl, &g_sleep_dur);
-	return (state == PM_DEEP_SLEEP && g_sleep_dur >= MIN_SLEEP_TIME);
+	uint32_t primask = disable_irq();
+	int state = rwip_power_state(ble_hdl, &g_sleep_dur); /*Can't be interrupted by BLE interrupt */
+	__set_PRIMASK(primask);
+	sleep = (state == PM_DEEP_SLEEP && g_sleep_dur >= MIN_SLEEP_TIME);
+	return sleep;
 }
 
 static void in6xx_ble_thread(void *p1, void *p2, void *p3)
@@ -102,9 +117,21 @@ static void in6xx_ble_thread(void *p1, void *p2, void *p3)
 	}
 }
 
-static void ble_stack_signal(void)
+static void ble_swi_handler(void *arg)
 {
     k_sem_give(&ble_stack_sem);
+}
+
+static void swi_init(void)
+{
+	IRQ_CONNECT(SWI_IRQn, SWI_IRQ_PRIO, SWI_Handler, NULL, 0);
+	hal_swi_int_prio(SWI_IRQ_PRIO);
+	swi_num = hal_swi_register(NULL, ble_swi_handler);
+}
+
+static void ble_stack_signal(void)
+{
+	hal_swi_set(swi_num);
 }
 
 static bool is_hci_event_discardable(const uint8_t *evt_data)
@@ -516,8 +543,11 @@ static int bt_in6xx_open(void)
 #ifndef CONFIG_IN6XXE_HCI_TL
     in_ble_vhci_host_register_callback(in_ble_vhci_rx_cb);
 #endif	
+
+	swi_init();
+
 	IRQ_CONNECT(Ble_IRQn,
-			    1,
+			    BLE_IRQ_PRIO,
 			    bt_in6xx_isr,	
 			    NULL,
 			    0);
@@ -547,6 +577,8 @@ static int in6xxe_hci_pm_action(const struct device *dev,
     case PM_DEVICE_ACTION_RESUME:
         /* resume the device */
 		rwip_power_up(ble_hdl);
+		hal_swi_int_prio(SWI_IRQ_PRIO);
+		irq_enable(SWI_IRQn);
         break;
     default:
         return -ENOTSUP;

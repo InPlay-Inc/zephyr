@@ -40,22 +40,24 @@ static struct k_spinlock g_lock;
 
 extern void delay_us(uint32_t);
 
-static uint32_t aon_tmr2_get(void)
+static uint32_t RAM_PM aon_tmr2_get(void)
 {
 	k_spinlock_key_t key = k_spin_lock(&g_lock);
-	aon_tmr2_snap_tick();
-	uint32_t tick = aon_tmr2_read_tick();
+	uint32_t tick = 0;
+	do {
+		aon_tmr2_snap_tick();
+		tick = aon_tmr2_read_tick();
+	} while (tick == 0);  /* Avoid reading 0 */
 	k_spin_unlock(&g_lock, key);
 	return tick;
 }
 
-static void aon_tmr2_set_emit(int id, uint32_t tick)
+static void RAM_PM aon_tmr2_set_emit(int id, uint32_t tick)
 {
-	//printk("emit:%u\n", tick);
 	aon_tmr_emit_set_tick(id, tick);
 }
 
-static void aon_tmr2_isr(const void *arg)
+static void RAM_PM aon_tmr2_isr(const void *arg)
 {
 	ARG_UNUSED(arg);
 
@@ -90,7 +92,7 @@ static void aon_tmr2_isr(const void *arg)
 	}
 }
 
-void sys_clock_set_timeout(int32_t ticks, bool idle)
+void RAM_PM sys_clock_set_timeout(int32_t ticks, bool idle)
 {
 	ARG_UNUSED(idle);
 
@@ -123,7 +125,7 @@ void sys_clock_set_timeout(int32_t ticks, bool idle)
 	k_spin_unlock(&g_lock, key);
 }
 
-uint32_t sys_clock_elapsed(void)
+uint32_t RAM_PM sys_clock_elapsed(void)
 {
 	if (!IS_ENABLED(CONFIG_TICKLESS_KERNEL)) {
 		return 0;
@@ -135,12 +137,12 @@ uint32_t sys_clock_elapsed(void)
 	return ret;
 }
 
-uint32_t sys_clock_cycle_get_32(void)
+uint32_t RAM_PM sys_clock_cycle_get_32(void)
 {
 	return COUNTER_MAX - aon_tmr2_get();
 }
 
-uint64_t sys_clock_cycle_get_64(void)
+uint64_t RAM_PM sys_clock_cycle_get_64(void)
 {
 	return COUNTER_MAX - aon_tmr2_get();
 }
